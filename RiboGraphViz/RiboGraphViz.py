@@ -199,7 +199,7 @@ class RiboGraphViz(object):
 
                     jj+=1
 
-    def get_coordinates(self, align=False, align_mode='COM',return_pos_dict=False,helices_to_flip=[],move_coord_groups=[],rotate_groups=[]):
+    def get_coordinates(self, align=False, align_mode='COM',auto_flip_stems=True,return_pos_dict=False,helices_to_flip=[],move_coord_groups=[],rotate_groups=[]):
         '''
         align (bool): set first nucleotide at [0,0] and rotates structure according to align_mode.
         align_mode ("COM","end"): if 'COM', aligns center of mass to x axis. if "end", aligns 3' end to x axis.
@@ -350,6 +350,16 @@ class RiboGraphViz(object):
         for angle,group in rotate_groups:
             node_pos_list_x,node_pos_list_y = utils._rotate_group(node_pos_list_x,node_pos_list_y,angle,group)        
 
+        if auto_flip_stems:
+            for stem in self.stems:
+                left,right = [x[0] for x in stem],[x[1] for x in stem]
+                left_min,left_max,right_min,right_max = min(left),max(left),min(right),max(right)
+                intersect = utils._intersect(node_pos_list_x,node_pos_list_y,[left_min,left_min-1],[right_max,right_max+1])
+                if intersect:
+                    node_pos_list_x,node_pos_list_y = utils._flip_helix(node_pos_list_x,node_pos_list_y,left,right)
+                intersect = utils._intersect(node_pos_list_x,node_pos_list_y,[left_max,left_max+1],[right_min,right_min-1])
+                if intersect:
+                    node_pos_list_x,node_pos_list_y = utils._flip_around_helix(node_pos_list_x,node_pos_list_y,left,right,list(range(left_max+1,right_min)))
         if return_pos_dict:
             coord_dict = {}
             for i in range(len(node_pos_list_x)):

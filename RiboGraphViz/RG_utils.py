@@ -274,6 +274,48 @@ def _flip_helix(x,y,left,right):
         y[i] = temp*beta[2]+y[i]
     return x,y
 
+def _flip_around_helix(x,y,left,right,to_flip):
+    # get center line between 2 groups
+    # left - list of indices 
+    # right - list of indices 
+    class1 = []
+    class2 = []
+    labels1 = []
+    labels2 =[]
+    for i in left:
+        class1.append(np.array([x[i],y[i]]))
+        labels1.append(-1)
+    for i in right:
+        class2.append(np.array([x[i],y[i]]))
+        labels1.append(1)
+    class1 = np.array(class1)
+    class2 = np.array(class2)
+    X = np.vstack((class1, class2))
+    m = len(X)
+    X = np.array([np.ones(m), X[:, 0], X[:, 1]]).T
+    Y = np.concatenate((labels1, labels2)).T
+    beta = np.linalg.inv(X.T @ X) @ (X.T @ Y)
+    # 0 = b0 +b1x +b2y
+    
+    # reflect all points over center line
+    for i in to_flip:
+        temp = -2*(beta[0]+beta[1]*x[i]+beta[2]*y[i])/(beta[1]**2+beta[2]**2)
+        x[i] = temp*beta[1]+x[i]
+        y[i] = temp*beta[2]+y[i]
+    return x,y
+
+def _intersect(x,y,lineA,lineB):
+    A0_B = (y[lineB[1]]-y[lineA[0]]) * (x[lineB[0]]-x[lineA[0]]) > (y[lineB[0]]-y[lineA[0]]) * (x[lineB[1]]-x[lineA[0]])
+    A1_B = (y[lineB[1]]-y[lineA[1]]) * (x[lineB[0]]-x[lineA[1]]) > (y[lineB[0]]-y[lineA[1]]) * (x[lineB[1]]-x[lineA[1]])
+    A_B0 = (y[lineB[0]]-y[lineA[0]]) * (x[lineA[1]]-x[lineA[0]]) > (y[lineA[1]]-y[lineA[0]]) * (x[lineB[0]]-x[lineA[0]])
+    A_B1 = (y[lineB[1]]-y[lineA[0]]) * (x[lineA[1]]-x[lineA[0]]) > (y[lineA[1]]-y[lineA[0]]) * (x[lineB[1]]-x[lineA[0]])
+    return A0_B != A1_B and A_B0 != A_B1
+                    #def ccw(A,B,C):
+                #    return (C.y-A.y) * (B.x-A.x) > (B.y-A.y) * (C.x-A.x)
+
+                # Return true if line segments AB and CD intersect
+                #def intersect(A,B,C,D):
+                #    return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
 
 def _move_group(x,y,offset,group):
     # group - list of indices 
@@ -301,3 +343,6 @@ def _rotate_group(x,y,angle,group):
         x[i] = centroid[0] + math.cos(rotation) * (x[i] - centroid[0]) - math.sin(rotation) * (y[i] - centroid[1])
         y[i] = centroid[1] + math.sin(rotation) * (x_orig - centroid[0]) + math.cos(rotation) * (y[i] - centroid[1])
     return x,y
+
+def _get_distance(x,y,inxA,inxB):
+    return np.sqrt((x[inxA]-x[inxB])**2+(y[inxA]-y[inxB+1])**2)
