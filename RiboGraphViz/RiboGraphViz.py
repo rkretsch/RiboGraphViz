@@ -291,6 +291,23 @@ class RiboGraphViz(object):
         node_pos_list_x = [node_positions_x[i]-node_positions_x[0] for i in range(self.N)]
         node_pos_list_y = [node_positions_y[i]-node_positions_y[0] for i in range(self.N)]
 
+        for left,right in helices_to_flip:
+            node_pos_list_x,node_pos_list_y = utils._flip_helix(node_pos_list_x,node_pos_list_y,left,right)
+        for offset,group in move_coord_groups:
+            node_pos_list_x,node_pos_list_y = utils._move_group(node_pos_list_x,node_pos_list_y,offset,group)
+        for angle,group in rotate_groups:
+            node_pos_list_x,node_pos_list_y = utils._rotate_group(node_pos_list_x,node_pos_list_y,angle,group)        
+
+        if auto_flip_stems:
+            for stem in self.stems:
+                left,right = [x[0] for x in stem],[x[1] for x in stem]
+                left_min,left_max,right_min,right_max = min(left),max(left),min(right),max(right)
+                intersect = utils._intersect(node_pos_list_x,node_pos_list_y,[left_min,left_min-1],[right_max,right_max+1])
+                if intersect:
+                    node_pos_list_x,node_pos_list_y = utils._flip_helix(node_pos_list_x,node_pos_list_y,left,right)
+                intersect = utils._intersect(node_pos_list_x,node_pos_list_y,[left_max,left_max+1],[right_min,right_min-1])
+                if intersect:
+                    node_pos_list_x,node_pos_list_y = utils._flip_around_helix(node_pos_list_x,node_pos_list_y,left,right,list(range(left_max+1,right_min)))
         if align:
             if align_mode=='end':
                 vec_01_x = node_pos_list_x[self.N-1]
@@ -343,23 +360,7 @@ class RiboGraphViz(object):
         node_pos_list_x /= bond_width
         node_pos_list_y /= bond_width
 
-        for left,right in helices_to_flip:
-            node_pos_list_x,node_pos_list_y = utils._flip_helix(node_pos_list_x,node_pos_list_y,left,right)
-        for offset,group in move_coord_groups:
-            node_pos_list_x,node_pos_list_y = utils._move_group(node_pos_list_x,node_pos_list_y,offset,group)
-        for angle,group in rotate_groups:
-            node_pos_list_x,node_pos_list_y = utils._rotate_group(node_pos_list_x,node_pos_list_y,angle,group)        
 
-        if auto_flip_stems:
-            for stem in self.stems:
-                left,right = [x[0] for x in stem],[x[1] for x in stem]
-                left_min,left_max,right_min,right_max = min(left),max(left),min(right),max(right)
-                intersect = utils._intersect(node_pos_list_x,node_pos_list_y,[left_min,left_min-1],[right_max,right_max+1])
-                if intersect:
-                    node_pos_list_x,node_pos_list_y = utils._flip_helix(node_pos_list_x,node_pos_list_y,left,right)
-                intersect = utils._intersect(node_pos_list_x,node_pos_list_y,[left_max,left_max+1],[right_min,right_min-1])
-                if intersect:
-                    node_pos_list_x,node_pos_list_y = utils._flip_around_helix(node_pos_list_x,node_pos_list_y,left,right,list(range(left_max+1,right_min)))
         if return_pos_dict:
             coord_dict = {}
             for i in range(len(node_pos_list_x)):
